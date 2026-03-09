@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Java Roadmap</title>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════
+   THEME VARIABLES
+═══════════════════════════════════════ */
+[data-theme="light"] {
+  --bg:        #ffffff;
+  --bg2:       #f7f7f7;
+  --card-bg:   #f2f2f2;
+  --border:    #e0e0e0;
+  --text:      #111111;
+  --sub:       #555555;
+  --accent:    #c8102e;
+  --accent2:   #e63950;
+  --node-ring: #ffffff;
+  --line:      #c8102e;
+  --line-glow: rgba(200,16,46,0.22);
+  --btn-bg:    #111;
+  --btn-txt:   #fff;
+}
+[data-theme="dark"] {
+  --bg:        #0f0f0f;
+  --bg2:       #181818;
+  --card-bg:   #1e1e1e;
+  --border:    #2a2a2a;
+  --text:      #f0f0f0;
+  --sub:       #999999;
+  --accent:    #ff3355;
+  --accent2:   #ff6680;
+  --node-ring: #0f0f0f;
+  --line:      #ff3355;
+  --line-glow: rgba(255,51,85,0.30);
+  --btn-bg:    #f0f0f0;
+  --btn-txt:   #111;
+}
+
+/* ═══════════════════════════════════════
+   BASE
+═══════════════════════════════════════ */
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  transition: background 0.35s, color 0.35s;
+  min-height: 100vh;
+}
+
+.page {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 44px 20px 90px;
+}
+
+/* ═══════════════════════════════════════
+   HEADER
+═══════════════════════════════════════ */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin-bottom: 60px;
+}
+
+.title {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: clamp(2.4rem, 8vw, 4rem);
+  letter-spacing: 4px;
+  line-height: 1;
+  text-align: center;
+}
+.title .blue { color: #1565C0; }
+.title .black { color: var(--text); }
+
+/* Dark Mode Toggle */
+.theme-btn {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--btn-bg);
+  color: var(--btn-txt);
+  border: none;
+  border-radius: 50px;
+  padding: 8px 16px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: 0.5px;
+  transition: background 0.3s, color 0.3s, transform 0.15s;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+  white-space: nowrap;
+}
+.theme-btn:hover { transform: translateY(-50%) scale(1.05); }
+.theme-btn .icon { font-size: 1rem; }
+
+/* ═══════════════════════════════════════
+   ROADMAP LAYOUT
+   Centre column holds the zigzag nodes.
+   Cards float left or right of it.
+═══════════════════════════════════════ */
+.roadmap {
+  position: relative;
+  display: grid;
+  /* col: left-card | centre-spine | right-card */
+  grid-template-columns: 1fr 80px 1fr;
+  row-gap: 0;
+}
+
+/* SVG overlay */
+#road-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  overflow: visible;
+}
+
+/* ── PATH STYLES ── */
+.path-shadow {
+  fill: none;
+  stroke: var(--line-glow);
+  stroke-width: 14;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.path-main {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.path-shine {
+  fill: none;
+  stroke: rgba(255,255,255,0.55);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 4 10;
+}
+
+@keyframes drawPath {
+  to { stroke-dashoffset: 0; }
+}
+
+/* ── STEP ── */
+.step {
+  display: contents; /* lets children sit in the grid */
+}
+
+/* Each step has 3 children: left-cell, node-cell, right-cell */
+.cell-left  { grid-column: 1; display:flex; align-items:center; justify-content:flex-end; padding: 0 18px 56px 0; }
+.cell-node  { grid-column: 2; display:flex; align-items:flex-start; justify-content:center; padding-top: 0; position:relative; z-index:1; }
+.cell-right { grid-column: 3; display:flex; align-items:center; justify-content:flex-start; padding: 0 0 56px 18px; }
+
+/* empty cell spacer */
+.cell-empty { display: flex; align-items:center; }
+
+/* ── NODE ── */
+.node {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 3;
+  flex-shrink: 0;
+  cursor: default;
+  transition: transform 0.22s;
+  /* double ring */
+  box-shadow:
+    0 0 0 4px var(--node-ring),
+    0 0 0 7px var(--accent),
+    0 6px 22px var(--line-glow);
+}
+.node:hover { transform: scale(1.14); }
+
+/* ── CARD ── */
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 15px 18px;
+  width: 100%;
+  max-width: 320px;
+  transition: transform 0.2s, box-shadow 0.2s, background 0.35s, border 0.35s;
+  position: relative;
+  overflow: hidden;
+}
+.card::after {
+  content:'';
+  position:absolute;
+  top:0; left:0; right:0;
+  height:3px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  border-radius: 14px 14px 0 0;
+}
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 28px var(--line-glow);
+}
+
+.card h3 {
+  font-family: 'Black Han Sans', sans-serif;
+  font-size: 1rem;
+  color: var(--accent);
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+.card ul { list-style:none; display:flex; flex-direction:column; gap:5px; }
+.card ul li {
+  font-size: 0.845rem;
+  color: var(--sub);
+  padding-left: 14px;
+  position: relative;
+  line-height: 1.45;
+  transition: color 0.35s;
+}
+.card ul li::before {
+  content: "▸";
+  position: absolute;
+  left: 0;
+  color: var(--accent);
+  font-size: 0.62rem;
+  top: 3px;
+}
+
+/* ── FUN CARD ── */
+.fun-node {
+  background: #111 !important;
+  box-shadow:
+    0 0 0 4px var(--node-ring),
+    0 0 0 7px #00e676,
+    0 6px 22px rgba(0,230,118,0.3) !important;
+  animation: wiggle 0.6s ease-in-out infinite alternate !important;
+  font-size: 1.4rem;
+}
+.fun-card {
+  background: #0d1a12 !important;
+  border-color: #1a3a22 !important;
+}
+.fun-card::after {
+  background: linear-gradient(90deg, #00e676, #00bcd4) !important;
+}
+.fun-card h3  { color: #00e676 !important; }
+.fun-card li  { color: #aaa !important; }
+.fun-card li::before { color: #00e676 !important; }
+
+@keyframes wiggle {
+  from { transform: rotate(-10deg) scale(1.1); }
+  to   { transform: rotate(10deg)  scale(1.2); }
+}
+
+/* ── ENTRANCE ANIMATION ── */
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(18px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+.cell-left, .cell-node, .cell-right {
+  opacity: 0;
+  animation: fadeUp 0.5s ease forwards;
+}
+/* stagger by row — nth-child counts all grid cells */
+.cell-left:nth-child(1),  .cell-node:nth-child(2),  .cell-right:nth-child(3)  { animation-delay:.08s }
+.cell-left:nth-child(4),  .cell-node:nth-child(5),  .cell-right:nth-child(6)  { animation-delay:.16s }
+.cell-left:nth-child(7),  .cell-node:nth-child(8),  .cell-right:nth-child(9)  { animation-delay:.24s }
+.cell-left:nth-child(10), .cell-node:nth-child(11), .cell-right:nth-child(12) { animation-delay:.32s }
+.cell-left:nth-child(13), .cell-node:nth-child(14), .cell-right:nth-child(15) { animation-delay:.40s }
+.cell-left:nth-child(16), .cell-node:nth-child(17), .cell-right:nth-child(18) { animation-delay:.48s }
+.cell-left:nth-child(19), .cell-node:nth-child(20), .cell-right:nth-child(21) { animation-delay:.56s }
+.cell-left:nth-child(22), .cell-node:nth-child(23), .cell-right:nth-child(24) { animation-delay:.64s }
+.cell-left:nth-child(25), .cell-node:nth-child(26), .cell-right:nth-child(27) { animation-delay:.72s }
+.cell-left:nth-child(28), .cell-node:nth-child(29), .cell-right:nth-child(30) { animation-delay:.80s }
+.cell-left:nth-child(31), .cell-node:nth-child(32), .cell-right:nth-child(33) { animation-delay:.88s }
+
+/* ── FOOTER ── */
+.footer {
+  text-align:center;
+  margin-top:28px;
+  font-size:0.76rem;
+  color: var(--sub);
+  letter-spacing:1.5px;
+  text-transform:uppercase;
+  transition: color 0.35s;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 540px) {
+  .roadmap { grid-template-columns: 1fr 60px 1fr; }
+  .card { max-width: 100%; padding: 12px 14px; }
+  .cell-left  { padding: 0 10px 48px 0; }
+  .cell-right { padding: 0 0 48px 10px; }
+  .theme-btn span.label { display:none; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <h1 class="title">
+      <span class="blue">JAVA</span> <span class="black">ROADMAP</span>
+    </h1>
+    <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">
+      <span class="icon">☀️</span>
+      <span class="label">Light Mode</span>
+    </button>
+  </div>
+
+  <!-- ROADMAP GRID -->
+  <div class="roadmap" id="roadmap">
+
+    <svg id="road-svg" aria-hidden="true">
+      <path class="path-shadow" id="p-shadow" d=""/>
+      <path class="path-main"   id="p-main"   d=""/>
+      <path class="path-shine"  id="p-shine"  d=""/>
+    </svg>
+
+    <!-- ROW 1 · Basic · LEFT card -->
+    <div class="cell-left">
+      <div class="card">
+        <h3>Basic</h3>
+        <ul>
+          <li>Syntax &amp; Variables</li>
+          <li>Data Types</li>
+          <li>Control Flow</li>
+          <li>Loops</li>
+          <li>Arrays</li>
+        </ul>
+      </div>
+    </div>
+    <div class="cell-node"><div class="node" id="n1">1</div></div>
+    <div class="cell-empty cell-right"></div>
+
+    <!-- ROW 2 · OOPs · RIGHT card -->
+    <div class="cell-empty cell-left"></div>
+    <div class="cell-node"><div class="node" id="n2">2</div></div>
+    <div class="cell-right">
+      <div class="card">
+        <h3>OOPs</h3>
+        <ul>
+          <li>Classes &amp; Objects</li>
+          <li>Inheritance</li>
+          <li>Polymorphism</li>
+          <li>Abstraction</li>
+          <li>Encapsulation</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ROW 3 · Collections · LEFT card -->
+    <div class="cell-left">
+      <div class="card">
+        <h3>Collections</h3>
+        <ul>
+          <li>List, Set, Map</li>
+          <li>Generics</li>
+          <li>Iterators</li>
+        </ul>
+      </div>
+    </div>
+    <div class="cell-node"><div class="node" id="n3">3</div></div>
+    <div class="cell-empty cell-right"></div>
+
+    <!-- ROW 4 · Exception Handling · RIGHT card -->
+    <div class="cell-empty cell-left"></div>
+    <div class="cell-node"><div class="node" id="n4">4</div></div>
+    <div class="cell-right">
+      <div class="card">
+        <h3>Exception Handling</h3>
+        <ul>
+          <li>Try-Catch</li>
+          <li>Throw &amp; Throws</li>
+          <li>Custom Exceptions</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ROW 5 · File I/O · LEFT card -->
+    <div class="cell-left">
+      <div class="card">
+        <h3>File I/O</h3>
+        <ul>
+          <li>FileReader / Writer</li>
+          <li>BufferedReader / Writer</li>
+          <li>Serialization</li>
+        </ul>
+      </div>
+    </div>
+    <div class="cell-node"><div class="node" id="n5">5</div></div>
+    <div class="cell-empty cell-right"></div>
+
+    <!-- ROW 6 · Multithreading · RIGHT card -->
+    <div class="cell-empty cell-left"></div>
+    <div class="cell-node"><div class="node" id="n6">6</div></div>
+    <div class="cell-right">
+      <div class="card">
+        <h3>Multithreading</h3>
+        <ul>
+          <li>Thread &amp; Runnable</li>
+          <li>Synchronization</li>
+          <li>Executors</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ROW 7 · Java 8+ · LEFT card -->
+    <div class="cell-left">
+      <div class="card">
+        <h3>Java 8+</h3>
+        <ul>
+          <li>Lambda Expressions</li>
+          <li>Stream API</li>
+          <li>Functional Interfaces</li>
+          <li>Date &amp; Time API</li>
+        </ul>
+      </div>
+    </div>
+    <div class="cell-node"><div class="node" id="n7">7</div></div>
+    <div class="cell-empty cell-right"></div>
+
+    <!-- ROW 8 · JDBC · RIGHT card -->
+    <div class="cell-empty cell-left"></div>
+    <div class="cell-node"><div class="node" id="n8">8</div></div>
+    <div class="cell-right">
+      <div class="card">
+        <h3>JDBC</h3>
+        <ul>
+          <li>Connection</li>
+          <li>Statements</li>
+          <li>Transactions</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ROW 9 · Frameworks · LEFT card -->
+    <div class="cell-left">
+      <div class="card">
+        <h3>Frameworks</h3>
+        <ul>
+          <li>Spring Boot</li>
+          <li>Hibernate</li>
+          <li>Maven / Gradle</li>
+        </ul>
+      </div>
+    </div>
+    <div class="cell-node"><div class="node" id="n9">9</div></div>
+    <div class="cell-empty cell-right"></div>
+
+    <!-- ROW 10 · Web Dev · RIGHT card -->
+    <div class="cell-empty cell-left"></div>
+    <div class="cell-node"><div class="node" id="n10">10</div></div>
+    <div class="cell-right">
+      <div class="card">
+        <h3>Web Dev</h3>
+        <ul>
+          <li>Servlets &amp; JSP</li>
+          <li>REST API</li>
+          <li>Spring MVC</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ROW 11 · FUN ENDING · LEFT card -->
+    <div class="cell-left" style="padding-bottom:0;">
+      <div class="card fun-card">
+        <h3>🚨 CONGRATULATIONS!</h3>
+        <ul>
+          <li>You finished the Java Roadmap 🎉</li>
+          <li>Go home bro... 😂</li>
+          <li style="color:#00e676 !important; font-weight:600;">AI is coming for your job anyway 🤖</li>
+          <li style="font-style:italic;">jp — go build something awesome 💪</li>
+        </ul>
+      </div>
+    </div>
+    <div class="cell-node" style="padding-bottom:0;">
+      <div class="node fun-node" id="n11">🏠</div>
+    </div>
+    <div class="cell-empty cell-right" style="padding-bottom:0;"></div>
+
+  </div><!-- end roadmap -->
+
+  <p class="footer">Java Learning Path &nbsp;·&nbsp; Go Home &nbsp;·&nbsp; AI Era Incoming 🤖😂</p>
+
+  <div style="text-align: center; margin-top: 60px; margin-bottom: 20px;">
+    <p style="color: var(--sub); font-size: 0.9rem; margin-bottom: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Follow for more content</p>
+    <a href="https://jayapraka5h.github.io/My-Portfolio" target="_blank" rel="noopener noreferrer"
+      style="display: inline-block; transition: all 0.2s ease; text-decoration: none; color: var(--text); font-weight: 700; padding: 10px 24px; border: 2px solid var(--text); border-radius: 8px; margin: 8px 0;"
+      onmouseover="this.style.transform='scale(1.05)'; this.style.backgroundColor=getComputedStyle(document.documentElement).getPropertyValue('--text').trim(); this.style.color=getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();"
+      onmouseout="this.style.transform='scale(1)'; this.style.backgroundColor='transparent'; this.style.color=getComputedStyle(document.documentElement).getPropertyValue('--text').trim();">
+      My Portfolio
+    </a>
+    <p style="color: var(--text); font-size: 1.1rem; margin-top: 16px; font-weight: 800;">Thank you!</p>
+  </div>
+</div>
+
+<script>
+/* ── THEME TOGGLE ── */
+function toggleTheme() {
+  const html = document.documentElement;
+  const btn  = document.getElementById('themeBtn');
+  const isDark = html.getAttribute('data-theme') === 'dark';
+  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  btn.innerHTML = isDark
+    ? '<span class="icon">🌙</span><span class="label">Dark Mode</span>'
+    : '<span class="icon">☀️</span><span class="label">Light Mode</span>';
+  // Redraw path colours after transition
+  setTimeout(buildPath, 50);
+}
+
+/* ── BUILD ZIGZAG PATH ── */
+function buildPath() {
+  const roadmap = document.getElementById('roadmap');
+  const rmRect  = roadmap.getBoundingClientRect();
+
+  const ids = ['n1','n2','n3','n4','n5','n6','n7','n8','n9','n10','n11'];
+  const pts = ids.map(id => {
+    const r = document.getElementById(id).getBoundingClientRect();
+    return {
+      x: +(r.left + r.width  / 2 - rmRect.left).toFixed(1),
+      y: +(r.top  + r.height / 2 - rmRect.top ).toFixed(1)
+    };
+  });
+
+  // Pure straight-line zigzag — exactly like the original image
+  let d = `M ${pts[0].x} ${pts[0].y}`;
+  for (let i = 1; i < pts.length; i++) {
+    d += ` L ${pts[i].x} ${pts[i].y}`;
+  }
+
+  const shadow = document.getElementById('p-shadow');
+  const main   = document.getElementById('p-main');
+  const shine  = document.getElementById('p-shine');
+
+  [shadow, main, shine].forEach(p => {
+    p.setAttribute('d', d);
+    p.style.animation = 'none';
+    p.getBoundingClientRect(); // force reflow
+  });
+
+  const len = main.getTotalLength();
+  [shadow, main, shine].forEach(p => {
+    p.style.strokeDasharray  = len;
+    p.style.strokeDashoffset = len;
+    p.style.animation = `drawPath 2s cubic-bezier(0.4,0,0.2,1) forwards 0.2s`;
+  });
+}
+
+window.addEventListener('load',   () => setTimeout(buildPath, 160));
+window.addEventListener('resize', () => setTimeout(buildPath, 80));
+</script>
+</body>
+</html>
